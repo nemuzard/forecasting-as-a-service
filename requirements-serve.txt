@@ -1,0 +1,9 @@
+fastapi==0.115.0
+uvicorn==0.30.6
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.7.1    
+pyarrow==17.0.0
+joblib==1.4.2
+prometheus-client==0.20.0
+python-dateutil==2.9.0.post0
