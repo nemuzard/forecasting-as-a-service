@@ -1,8 +1,9 @@
-cat > .gitignore <<'EOF'
 # ---- OS / IDE ----
 .DS_Store
 .vscode/
 .idea/
+tests/__pycache__/
+__pycache__/
 
 # ---- Python ----
 __pycache__/
@@ -14,10 +15,12 @@ env/
 # ---- Data / Artifacts ----
 data/raw/
 ml/mlruns/
-# igore artifacts，
-artifacts/*
-#!artifacts/model.joblib
-!artifacts/.gitkeep
+
+!artifacts/
+!artifacts/model.joblib
+!data/processed/
+!data/processed/item_lookup.parquet
+!data/processed/store_lookup.parquet
 
 # ---- Docker / Logs ----
 *.log
