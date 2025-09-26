@@ -14,15 +14,21 @@ jobs:
     permissions:
       contents: read
       packages: write
+
     env:
       PYTHON_VERSION: '3.11'
       IMAGE_V1: ghcr.io/${{ github.repository }}:v1
       IMAGE_SHA: ghcr.io/${{ github.repository }}:${{ github.sha }}
 
     steps:
+      # 1) 检出代码 + 启用 LFS（关键：lfs: true）
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
 
+      # 2) 必需工件是否存在
       - name: Validate required artifacts exist
         run: |
           set -e
@@ -30,6 +36,20 @@ jobs:
           ls -lh data/processed/item_lookup.parquet
           ls -lh data/processed/store_lookup.parquet
 
+      # 3) 防止拉到 Git LFS 指针文件（过小即报错）
+      - name: Validate artifacts are real binaries (not LFS pointers)
+        run: |
+          set -e
+          for f in artifacts/model.joblib data/processed/item_lookup.parquet data/processed/store_lookup.parquet; do
+            sz=$(stat -c%s "$f")
+            echo "[check] $f size=${sz} bytes"
+            if [ "$sz" -lt 200 ]; then
+              echo "::error::$f looks like a Git LFS pointer (too small)."
+              exit 1
+            fi
+          done
+
+      # 4) 安装依赖并执行冒烟测试（启动 uvicorn → /healthz → /predict → /metrics）
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -41,6 +61,7 @@ jobs:
           pip install -r requirements-serve.txt requests
           python -m tests.smoke_test
 
+      # 5) 构建并推送镜像到 GHCR（使用 serve/Dockerfile，镜像内置模型/查表）
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
