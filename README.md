@@ -95,4 +95,4 @@ To solve this, a core part of the `ml/data_prep.py` pipeline involves strategic 
 * **Result:** The optimized data loading pipeline reduced the `train.csv` memory footprint to **3,710 MB (3.7 GB)**.
 * **Impact:** A **77% reduction in memory usage**, making the entire ETL and model training process feasible, stable, and efficient on standard hardware.
 * **Trade-Off:** This approach includes `parse_dates=["date"]` at load time, which trades a **one-time, upfront processing cost** (slower load speed) for massive, persistent memory savings and downstream convenience (enabling `.dt` accessor).
-
+[Memory Optimization Comparison: 16GB vs 3.7GB](./images/memory_result.png)
