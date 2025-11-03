@@ -88,7 +88,7 @@ This project's primary challenge was the 125M+ row `train.csv` file, which consu
 To solve this, a core part of the `ml/data_prep.py` pipeline involves strategic `dtype` optimization.
 
 * **Problem:** Default `pandas` `read_csv` behavior leads to a 16,074 MB (16 GB) memory footprint for the training data.
-* **Solution:** By precisely defining `dtype` parameters *at load time*, we force `pandas` to use more efficient types:
+* **Solution:** By precisely defining `dtype` parameters *at load time*, force `pandas` to use more efficient types:
     * Text-based, high-cardinality columns (like `family`, `city`, `state`) were converted from `object` to **`category`**.
     * Numeric identifiers (like `store_nbr`) were downcast from `int64` to **`int8`**.
     * Decimal targets (like `sales`) were downcast from `float64` to **`float32`**.
