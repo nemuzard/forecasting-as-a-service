@@ -10,27 +10,77 @@ N_STORES = 20
 N_ITEMS = 200
 
 def load_tables():
-    train = pd.read_csv(RAW/"train.csv", parse_dates=["date"])
-    items = pd.read_csv(RAW/"items.csv")
-    stores = pd.read_csv(RAW/"stores.csv")
-    oil = pd.read_csv(RAW/"oil.csv", parse_dates=["date"])
-    holidays = pd.read_csv(RAW/"holidays_events.csv", parse_dates=["date"])
-    transactions = pd.read_csv(RAW/"transactions.csv", parse_dates=["date"])
+
+
+    train_dtypes={
+        'id':'int64',
+        'store_nbr':'int8',
+        'item_nbr':'int32',
+        'onpromotion':pd.BooleanDtype(),
+        'sales':'float32'
+    }
+    train = pd.read_csv(RAW/"train.csv", parse_dates=["date"],dtype=train_dtypes)
+
+    items_dtypes={
+                'item_nbr':'int32',
+                'family':'category',
+                'class':'category',
+                'perishable':pd.BooleanDtype()
+            }
+    items = pd.read_csv(RAW/"items.csv",
+                        dtype=item_dtypes)
+
+
+    stores_dtype = {
+        'store_nbr':'int8',
+        'city':'category',
+        'state':'category',
+        'type':'category',
+        'cluster':'category' # duplicates exist, so can be seen as category instead of int8
+    }
+    stores = pd.read_csv(RAW/"stores.csv",dtype=stores_dtype)
+    
+    oil_dytes = {'dcoilwtico':'float32'}
+    oil = pd.read_csv(RAW/"oil.csv", parse_dates=["date"],dtype=oil_dytes)
+
+    holidays_dtypes = {
+        'type':'category',
+        'locale':'category',
+        'locale_name':'category',
+        'description':'object',
+        'transferred':'bool'
+    }
+    holidays = pd.read_csv(RAW/"holidays_events.csv", parse_dates=["date"],dtype=transactions_dtypes)
+
+    transactions_dtypes = {
+        'store_nbr':'int8',
+        'transactions':'int32'
+    }
+    transactions = pd.read_csv(RAW/"transactions.csv", parse_dates=["date"],dtype=transactions_dtypes)
+    
+
     return train, items, stores, oil, holidays, transactions
 
+# simplify the holidays table into a straightforward time series 
 def make_holiday_features(holidays: pd.DataFrame) -> pd.DataFrame:
     h = holidays.copy()
     h["is_holiday"] = 1
     return h[["date","is_holiday"]].drop_duplicates("date")
 
+# original dataset is too large 
+# only take top20 stores and top200 items in past 365days
 def recent_subset(train: pd.DataFrame) -> pd.DataFrame:
     max_date = train["date"].max()
     min_date = max_date - pd.Timedelta(days=RECENT_DAYS)
+
     sub = train[(train["date"]>=min_date) & (train["date"]<=max_date)].copy()
     store_top = sub.groupby("store_nbr")["unit_sales"].sum().sort_values(ascending=False).head(N_STORES).index
     item_top  = sub.groupby("item_nbr")["unit_sales"].sum().sort_values(ascending=False).head(N_ITEMS).index
+    
     return sub[sub["store_nbr"].isin(store_top) & sub["item_nbr"].isin(item_top)]
 
+# translate 'time' into meaningful pattern signal
+# HistGradientBoostingRegressor cannot understand time
 def add_calendar_feats(df: pd.DataFrame) -> pd.DataFrame:
     df["year"] = df["date"].dt.year
     df["month"] = df["date"].dt.month
@@ -39,28 +89,35 @@ def add_calendar_feats(df: pd.DataFrame) -> pd.DataFrame:
     df["weekofyear"] = df["date"].dt.isocalendar().week.astype(int)
     return df
 
+
+
 def main():
     train, items, stores, oil, holidays, transactions = load_tables()
-    sub = recent_subset(train)
 
+    sub = recent_subset(train)
+    # sub table only have ids, so we add information to it
     df = sub.merge(items, on="item_nbr", how="left") \
             .merge(stores, on="store_nbr", how="left")
 
     oil = oil.sort_values("date").copy()
     oil["dcoilwtico"] = oil["dcoilwtico"].ffill()
     df = df.merge(oil, on="date", how="left")
-    df["dcoilwtico"] = df["dcoilwtico"].ffill().fillna(0)
+    df["dcoilwtico"] = df["dcoilwtico"].ffill().fillna(0) # float
 
     h = make_holiday_features(holidays)
     df = df.merge(h, on="date", how="left")
-    df["is_holiday"] = df["is_holiday"].fillna(0).astype(int)
+    df["is_holiday"] = df["is_holiday"].fillna(0).astype(int) # 1/0 ->int
 
     df = df.merge(transactions, on=["date","store_nbr"], how="left")
     df["transactions"] = df["transactions"].fillna(0).astype(int)
-    df["onpromotion"] = df.get("onpromotion", 0)
+
+    # clean onpromotion, NaN -> 0 no promotion 
+    # df["onpromotion"] = df.get("onpromotion", 0)
     df["onpromotion"] = df["onpromotion"].fillna(0).astype(int)
 
     df = add_calendar_feats(df)
+
+
     df = df.sort_values(["store_nbr","item_nbr","date"])
     grp = df.groupby(["store_nbr","item_nbr"], group_keys=False)
 
@@ -76,7 +133,7 @@ def main():
     add_roll("transactions",[7,28])
 
     lag_cols = [c for c in df.columns if c.startswith(("lag_","roll_"))]
-    df = df.dropna(subset=lag_cols, how="any")  # 更稳，丢掉不完整窗口
+    df = df.dropna(subset=lag_cols, how="any")  
     df["hist_mean"] = grp["unit_sales"].shift(1).expanding(min_periods=10).mean()
     df["hist_median"] = grp["unit_sales"].shift(1).expanding(min_periods=10).median()
     eps = 1e-6
