@@ -28,7 +28,7 @@ def load_tables():
                 'perishable':pd.BooleanDtype()
             }
     items = pd.read_csv(RAW/"items.csv",
-                        dtype=item_dtypes)
+                        dtype=items_dtypes)
 
 
     stores_dtype = {
@@ -50,7 +50,7 @@ def load_tables():
         'description':'object',
         'transferred':'bool'
     }
-    holidays = pd.read_csv(RAW/"holidays_events.csv", parse_dates=["date"],dtype=transactions_dtypes)
+    holidays = pd.read_csv(RAW/"holidays_events.csv", parse_dates=["date"],dtype=holidays_dtypes)
 
     transactions_dtypes = {
         'store_nbr':'int8',
@@ -133,7 +133,7 @@ def main():
     add_roll("transactions",[7,28])
 
     lag_cols = [c for c in df.columns if c.startswith(("lag_","roll_"))]
-    df = df.dropna(subset=lag_cols, how="any")  
+    df = df.dropna(subset=lag_cols, how="any").copy() 
     df["hist_mean"] = grp["unit_sales"].shift(1).expanding(min_periods=10).mean()
     df["hist_median"] = grp["unit_sales"].shift(1).expanding(min_periods=10).median()
     eps = 1e-6
