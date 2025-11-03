@@ -2,9 +2,9 @@
 ### Business Background
 
 - **Retail Demand Forecasting**: Predicts the future sales volume of a specific product in a store for inventory, replenishment, and promotional decisions.
-- **Kaggle Favorita Dataset**: Contains daily store-product historical sales, promotional information, holidays, fuel prices, store and product attributes, and more. [link](https://www.kaggle.com/competitions/favorita-grocery-sales-forecasting)
+- **Kaggle Favorita Dataset**: Contains daily store-product historical sales, promotional information, holidays, fuel prices, store and product attributes, and more. [link to dataset](https://www.kaggle.com/competitions/favorita-grocery-sales-forecasting)
 
-Tech：Python、pandas、scikit-learn、MLflow、FastAPI、Prometheus、Docker、GitHub Actions、Terraform、AWS S3
+Tech：Python、pandas、scikit-learn、MLflow、FastAPI、Prometheus、Docker、GitHub Actions
 
 ### Project Structure 
 
@@ -12,7 +12,8 @@ Tech：Python、pandas、scikit-learn、MLflow、FastAPI、Prometheus、Docker�
 .
 ├─ data/
 │  ├─ raw/favorita-grocery-sales-forecasting/ 
-│  └─ processed/                               
+│  └─ processed/
+├─ images/                            
 ├─ ml/
 │  ├─ data_prep.py                            
 │  ├─ train.py                                 
