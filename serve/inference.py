@@ -7,8 +7,8 @@ import joblib
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, field_validator
-
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from ml.schema import CAT, NUM, ALL_FEATURES
 
 # ---------- Paths ----------
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +19,6 @@ DATA = ROOT / "data" / "processed"
 MODEL_PATH = ART / "model.joblib"
 ITEM_LK_PATH = DATA / "item_lookup.parquet"
 STORE_LK_PATH = DATA / "store_lookup.parquet"
-
 if not MODEL_PATH.exists():
     raise FileNotFoundError(f"Model not found: {MODEL_PATH}")
 if not ITEM_LK_PATH.exists() or not STORE_LK_PATH.exists():
@@ -31,6 +30,9 @@ ITEM_LK = pd.read_parquet(ITEM_LK_PATH)
 STORE_LK = pd.read_parquet(STORE_LK_PATH)
 
 # ---------- Prometheus metrics ----------
+'''
+Two counters, total requests and failures
+'''
 PREDICT_CT = Counter("predict_requests_total", "Total /predict requests")
 PREDICT_ERR = Counter("predict_errors_total", "Total /predict errors")
 PREDICT_LAT = Histogram(
@@ -45,6 +47,7 @@ def metrics():
 
 # ---------- Input schema (for internal use) ----------
 class PredictIn(BaseModel):
+    @field_validator("is_holiday", "onpromotion", mode="before")
     store_nbr: int
     item_nbr: int
     date: str  # YYYY-MM-DD
@@ -66,6 +69,9 @@ class PredictIn(BaseModel):
         return float(v)
 
 # ---------- Feature building ----------
+'''
+ 
+'''
 def _calendar_from_date(date_str: str) -> Dict[str, Any]:
     d = pd.to_datetime(date_str)
     return {
@@ -93,9 +99,9 @@ def build_features(inp: PredictIn) -> pd.DataFrame:
     # base numerics
     base = {
         "dcoilwtico": float(inp.dcoilwtico or 0.0),
-        "is_holiday": int(inp.is_holiday or 0),
-        "onpromotion": int(inp.onpromotion or 0),
-        "transactions": float(inp.transactions or 0.0),
+        "is_holiday": inp.is_holiday,
+        "onpromotion":inp.onpromotion,
+        "transactions":inp.transactions,
         **_calendar_from_date(inp.date),
     }
     # zeros for online-only unavailable features
@@ -119,12 +125,15 @@ def build_features(inp: PredictIn) -> pd.DataFrame:
 
     row = {**base, **zeros, **cats}
     X = pd.DataFrame([row])
+    X = X[ALL_FEATURES]
+    for col in CAT:
+        X[col] = X[col].astype('category')
     return X
 
 # ---------- Prediction ----------
 def predict_one(inp: PredictIn) -> dict:
     """Run a single prediction with latency/metrics."""
-    PREDICT_CT.inc()
+    PREDICT_CT.inc() # counter
     t0 = time.time()
     try:
         X = build_features(inp)

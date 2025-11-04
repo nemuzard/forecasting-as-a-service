@@ -9,7 +9,7 @@ from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import joblib
 from mlflow.models.signature import infer_signature
-
+from schema import CAT, NUM, ALL_FEATURES
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "processed"
 ART  = ROOT / "artifacts"; ART.mkdir(parents=True, exist_ok=True)
@@ -17,17 +17,7 @@ ART  = ROOT / "artifacts"; ART.mkdir(parents=True, exist_ok=True)
 TARGET = "unit_sales"
 LOG_TARGET = True
 
-CAT = ["family","class","perishable","city","state","type","cluster"]
-NUM = [
-    "dcoilwtico","is_holiday","year","month","day","dow","weekofyear",
-    "onpromotion","transactions",
-    "lag_sales_1","lag_sales_7","lag_sales_14","lag_sales_28",
-    "roll_unit_sales_7_mean","roll_unit_sales_7_std",
-    "roll_unit_sales_28_mean","roll_unit_sales_28_std",
-    "roll_onpromotion_7_mean","roll_onpromotion_28_mean",
-    "roll_transactions_7_mean","roll_transactions_28_mean",
-    "hist_mean","hist_median","rel_to_mean","rel_to_median"
-]
+
 
 def load_split():
     tr = pd.read_parquet(DATA/"train.parquet")
@@ -74,7 +64,7 @@ def main():
         te[col] = te[col].astype('category')
     
     # -- define X and y --
-    feats = CAT + NUM
+    feats = ALL_FEATURES
     y_tr = to_y(tr[TARGET].values)
     y_va = va[TARGET].values
     y_te = te[TARGET].values
