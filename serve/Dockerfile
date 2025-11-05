@@ -4,6 +4,7 @@ WORKDIR /app
 COPY requirements-serve.txt .
 RUN pip install --no-cache-dir -r requirements-serve.txt
 COPY serve serve
+COPY ml ml
 
 COPY artifacts/model.joblib artifacts/model.joblib
 COPY data/processed/item_lookup.parquet  data/processed/item_lookup.parquet
