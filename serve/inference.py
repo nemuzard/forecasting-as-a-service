@@ -47,7 +47,6 @@ def metrics():
 
 # ---------- Input schema (for internal use) ----------
 class PredictIn(BaseModel):
-    @field_validator("is_holiday", "onpromotion", mode="before")
     store_nbr: int
     item_nbr: int
     date: str  # YYYY-MM-DD
@@ -62,7 +61,7 @@ class PredictIn(BaseModel):
         if v is None: return 0
         return int(v)
 
-    @field_validator("transactions", mode="before")
+    @field_validator("transactions","dcoilwtico", mode="before")
     @classmethod
     def _to_float_nonneg(cls, v):
         if v is None: return 0.0
