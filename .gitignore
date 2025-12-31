@@ -15,6 +15,7 @@ env/
 # ---- Data / Artifacts ----
 data/raw/
 ml/mlruns/
+ml/test_memory.py
 
 !artifacts/
 !artifacts/model.joblib
@@ -36,3 +37,4 @@ touch artifacts/.gitkeep
 
 # Processed data files
 data/processed/
+
