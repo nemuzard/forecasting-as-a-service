@@ -17,19 +17,14 @@ data/raw/
 ml/mlruns/
 ml/test_memory.py
 
-!artifacts/
-!artifacts/model.joblib
-!data/processed/
-!data/processed/item_lookup.parquet
-!data/processed/store_lookup.parquet
+artifacts/
+
 
 # ---- Docker / Logs ----
 *.log
 EOF
 
-# Placeholder file to ensure that empty directories can be tracked by git
-mkdir -p artifacts .github/workflows
-touch artifacts/.gitkeep
+.github/
 # Terraform files
 .terraform/
 *.tfstate

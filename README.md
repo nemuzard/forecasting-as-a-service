@@ -18,7 +18,7 @@ Tech：Python、pandas、scikit-learn、MLflow、FastAPI、Prometheus、Docker�
 │  ├─ data_prep.py                            
 │  ├─ train.py                                 
 │  
-├─ server/
+├─ serve/
 │  ├─ app.py                                   
 │  ├─ inference.py                             
 │  └─ Dockerfile
